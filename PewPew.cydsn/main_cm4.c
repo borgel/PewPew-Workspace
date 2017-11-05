@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 
-#include "dac.h"
+#include "laser.h"
 
 #define LASER_MAX       (0xFFF)     //4096
 #define LASER_MIN       (0x000)
@@ -19,12 +19,14 @@ void doSawtoothWithSquare(bool swap, float scale)
     int const scaledMin = leftover / 2;
     
     while(true) {
-        dac_WriteSamples(scaledMin, scaledMin);
+        laser_SetGate(LASER_GATE_DISABLE_LASER);
+        laser_SetXY(scaledMin, scaledMin);
         // wait for the laser to slew to the start point
         for(saw = 0; saw < duration; saw += step){
             CyDelayUs(50);
         }
         
+        laser_SetGate(LASER_GATE_ENABLE_LASER);
         for(saw = 0; saw < duration; saw += step) {
             if(saw < third) {
                 square = scaledMin;
@@ -38,10 +40,10 @@ void doSawtoothWithSquare(bool swap, float scale)
             
             //x, y
             if(swap) {
-                dac_WriteSamples(saw, square);
+                laser_SetXY(saw, square);
             }
             else {
-                dac_WriteSamples(square, saw);
+                laser_SetXY(square, saw);
             }
             
             CyDelayUs(50);
@@ -57,7 +59,7 @@ int main(void)
     
     UART_DEBUG_PutString("\r\nStarting...\n");
     
-    dac_Init();
+    laser_Init();
     
     doSawtoothWithSquare(true, 1.0);
 
