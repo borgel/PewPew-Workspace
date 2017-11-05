@@ -11,6 +11,8 @@
 */
 #include "project.h"
 
+#include "dac.h"
+
 int main(void)
 {
     __enable_irq(); /* Enable global interrupts. */
@@ -19,11 +21,24 @@ int main(void)
     
     UART_DEBUG_PutString("\r\nStarting...\n");
     
-    DAC_CLOCK_Enable();
+    dac_Init();
+    
+    //dac_WriteSamples(0xFFF, 0x000);
+    //dac_WriteSamples(0x000, 0xFFF);
+    //dac_WriteSamples(0xFFF, 0xFFF);
 
     for(;;)
     {
-        /* Place your application code here. */
+        for(int i = 0; i < 0xFFF; i+=10) {
+            //x, y
+            //dac_WriteSamples(0x000, 0xFFF);
+            //dac_WriteSamples(0xFFF, 0x000);
+            dac_WriteSamples(0xFFF - i, i);
+            //UART_DEBUG_PutString(".");
+            
+            //1ms
+            CyDelayUs(50);
+        }
     }
 }
 
