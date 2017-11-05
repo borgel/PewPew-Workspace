@@ -1,17 +1,53 @@
-/* ========================================
- *
- * Copyright YOUR COMPANY, THE YEAR
- * All Rights Reserved
- * UNPUBLISHED, LICENSED SOFTWARE.
- *
- * CONFIDENTIAL AND PROPRIETARY INFORMATION
- * WHICH IS THE PROPERTY OF your company.
- *
- * ========================================
-*/
 #include "project.h"
 
+#include <stdbool.h>
+
 #include "dac.h"
+
+#define LASER_MAX       (0xFFF)     //4096
+#define LASER_MIN       (0x000)
+
+void doSawtoothWithSquare(bool swap, float scale)
+{
+    int saw = 0, square = 0;
+    int const step = 10;
+    int const duration = 0xFFF / 2; // runs twice
+    int const third = duration / 3;
+    //balance the min and max across center
+    int const leftover = LASER_MAX - (scale * LASER_MAX);
+    int const scaledMax = (scale * LASER_MAX) + leftover / 2;
+    int const scaledMin = leftover / 2;
+    
+    while(true) {
+        dac_WriteSamples(scaledMin, scaledMin);
+        // wait for the laser to slew to the start point
+        for(saw = 0; saw < duration; saw += step){
+            CyDelayUs(50);
+        }
+        
+        for(saw = 0; saw < duration; saw += step) {
+            if(saw < third) {
+                square = scaledMin;
+            }
+            else if(saw > third && saw < (2 * third)) {
+                square = scaledMax;
+            }
+            else if(saw > (2 * third)) {
+                square = scaledMin;
+            }
+            
+            //x, y
+            if(swap) {
+                dac_WriteSamples(saw, square);
+            }
+            else {
+                dac_WriteSamples(square, saw);
+            }
+            
+            CyDelayUs(50);
+        }
+    }
+}
 
 int main(void)
 {
@@ -23,23 +59,8 @@ int main(void)
     
     dac_Init();
     
-    //dac_WriteSamples(0xFFF, 0x000);
-    //dac_WriteSamples(0x000, 0xFFF);
-    //dac_WriteSamples(0xFFF, 0xFFF);
+    doSawtoothWithSquare(true, 1.0);
 
-    for(;;)
-    {
-        for(int i = 0; i < 0xFFF; i+=10) {
-            //x, y
-            //dac_WriteSamples(0x000, 0xFFF);
-            //dac_WriteSamples(0xFFF, 0x000);
-            dac_WriteSamples(0xFFF - i, i);
-            //UART_DEBUG_PutString(".");
-            
-            //1ms
-            CyDelayUs(50);
-        }
+    for(;;) {
     }
 }
-
-/* [] END OF FILE */
